@@ -3,7 +3,6 @@
 import Web.Scotty
 import Network.Wai.Middleware.RequestLogger (logStdoutDev, logStdout)
 import AuthenticationController
-import Data.Pool(createPool)
 import Data.Text (Text, unpack, pack)
 import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Configurator as C

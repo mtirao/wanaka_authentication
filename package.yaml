@@ -56,5 +56,5 @@ dependencies:
 - hasql-pool
 - rel8
 executables:
-  profiles:
+  wanaka-authentication:
     main: Main.hs
