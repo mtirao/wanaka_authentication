@@ -1,0 +1,60 @@
+name: wanaka-authentication
+version: '0.1.0.0'
+category: Web
+author: Marcos Tirao
+maintainer: marcos.tirao@icloud.com
+copyright: 2025 Marcos Tirao
+license: BSD3
+homepage: https://github.com/mtirao/wanaka_authentication#readme
+source-dirs:
+- .
+- src/controllers
+- src/models
+- src/views
+- src/repositories
+default-extensions:
+- DuplicateRecordFields
+- DeriveAnyClass
+- DerivingStrategies
+- OverloadedStrings
+- OverloadedRecordDot
+- TemplateHaskell
+- QuasiQuotes
+ghc-options:
+- -threaded
+- -O2
+- -rtsopts
+- -with-rtsopts=-N
+- -Wno-deprecations
+- -Wno-unused-imports
+- -Wno-type-equality-out-of-scope
+- -Wno-type-equality-requires-operators
+dependencies:
+- base >=4.14.3.0
+- scotty
+- bytestring
+- text
+- postgresql-simple
+- aeson
+- transformers
+- wai
+- wai-middleware-static
+- wai-extra
+- resource-pool
+- configurator
+- MissingH
+- lens
+- lens-aeson
+- wreq
+- http-types
+- time
+- warp-tls
+- warp
+- bytestring-conversion
+- jose-jwt
+- hasql
+- hasql-pool
+- rel8
+executables:
+  profiles:
+    main: Main.hs

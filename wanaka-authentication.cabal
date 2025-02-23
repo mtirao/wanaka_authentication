@@ -1,0 +1,67 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.37.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           wanaka-authentication
+version:        0.1.0.0
+category:       Web
+homepage:       https://github.com/mtirao/wanaka_authentication#readme
+author:         Marcos Tirao
+maintainer:     marcos.tirao@icloud.com
+copyright:      2025 Marcos Tirao
+license:        BSD3
+build-type:     Simple
+
+executable profiles
+  main-is: Main.hs
+  other-modules:
+      AuthenticationController
+      ErrorMessage
+      Views
+      Tenant
+      TenantsModel
+      Paths_wanaka_authentication
+  hs-source-dirs:
+      ./
+      src/controllers
+      src/models
+      src/views
+      src/repositories
+  default-extensions:
+      DuplicateRecordFields
+      DeriveAnyClass
+      DerivingStrategies
+      OverloadedStrings
+      OverloadedRecordDot
+      TemplateHaskell
+      QuasiQuotes
+  ghc-options: -threaded -O2 -rtsopts -with-rtsopts=-N -Wno-deprecations -Wno-unused-imports -Wno-type-equality-out-of-scope -Wno-type-equality-requires-operators
+  build-depends:
+      MissingH
+    , aeson
+    , base >=4.14.3.0
+    , bytestring
+    , bytestring-conversion
+    , configurator
+    , hasql
+    , hasql-pool
+    , http-types
+    , jose-jwt
+    , lens
+    , lens-aeson
+    , postgresql-simple
+    , rel8
+    , resource-pool
+    , scotty
+    , text
+    , time
+    , transformers
+    , wai
+    , wai-extra
+    , wai-middleware-static
+    , warp
+    , warp-tls
+    , wreq
+  default-language: Haskell2010
