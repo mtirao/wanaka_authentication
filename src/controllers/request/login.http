@@ -1,4 +1,4 @@
-POST http://localhost:3001/api/wanaka/accounts/login HTTP/1.1
+GET http://localhost:3001/api/wanaka/accounts/login HTTP/1.1
 content-type: application/json
 Authorization: Basic bWFyY29zLnRpcmFvQGljbG91ZC5jb206MzE3MkFwcEw=
 

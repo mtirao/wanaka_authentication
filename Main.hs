@@ -51,4 +51,4 @@ main = do
                 Left err -> putStrLn $ "Error acquiring connection: " ++ show err
                 Right pool -> scotty 3001 $ do
                     middleware logStdoutDev
-                    post "/api/wanaka/accounts/login" $ userAuthenticate pool
+                    get "/api/wanaka/accounts/login" $ userAuthenticate pool

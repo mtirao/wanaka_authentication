@@ -14,7 +14,7 @@ copyright:      2025 Marcos Tirao
 license:        BSD3
 build-type:     Simple
 
-executable profiles
+executable wanaka-authentication
   main-is: Main.hs
   other-modules:
       AuthenticationController
