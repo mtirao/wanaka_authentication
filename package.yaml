@@ -48,7 +48,6 @@ dependencies:
 - wreq
 - http-types
 - time
-- warp-tls
 - warp
 - bytestring-conversion
 - jose-jwt
