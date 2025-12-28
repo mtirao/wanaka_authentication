@@ -21,10 +21,10 @@ import qualified Data.Text.Encoding as T
 import GHC.Int
 
 import Control.Monad.IO.Class
-import TenantsModel
 import Tenant
 import Views
 import ErrorMessage
+import TokenService
 
 userAuthenticate conn =  do
         h <- header "Authorization"
@@ -42,6 +42,6 @@ userAuthenticate conn =  do
                         jsonResponse (ErrorMessage "User not found")
                         status forbidden403
                     Right [a] -> do
-                            jsonResponse (TenantResponse (TL.fromStrict $ getUserName a) (TL.fromStrict $ getUserId a) (TL.fromStrict $ getStatus a))
+                            createToken conn (getUserId a) "client_credentials"
                             status ok200
             Nothing -> status unauthorized401

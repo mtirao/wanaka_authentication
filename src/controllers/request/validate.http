@@ -1,0 +1,4 @@
+GET http://localhost:3001/api/wanaka/token/validate HTTP/1.1
+content-type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjbGllbnRfY3JlZGVudGlhbHMiLCJleHAiOjE3Njc4MDc0MTMsInN1YiI6IjkyNTI1ODQwIn0.06NRFn5-zBje5_2wUWhktGnxpURR7h-Udq0uh39eWBM
+x-client-id: client_credentials

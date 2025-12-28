@@ -1,0 +1,5 @@
+GET http://localhost:3001/api/wanaka/token HTTP/1.1
+content-type: application/json
+x-client-id: wanaka-budget
+x-client-secret: ae7a79e3-c2bf-43c3-a339-c27b6ed0cd39
+x-grant-type: api-user 

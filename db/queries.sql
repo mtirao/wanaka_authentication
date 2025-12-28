@@ -1,0 +1,1 @@
+select * from tokens where auth_token = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjbGllbnRfY3JlZGVudGlhbHMiLCJleHAiOjE3Njc4MDc0MTMsInN1YiI6IjkyNTI1ODQwIn0.06NRFn5-zBje5_2wUWhktGnxpURR7h-Udq0uh39eWBM';
