@@ -17,17 +17,12 @@ build-type:     Simple
 executable wanaka-authentication
   main-is: Main.hs
   other-modules:
-      AuthenticationController
-      GroupController
-      PermissionsController
-      ResourceMapController
-      TokenController
+      Server
       ErrorMessage
       GroupsDTO
       ResourceMapDTO
       TokenModel
       UserPermissionsDTO
-      Views
       Group
       Realm
       ResourceMap
@@ -38,9 +33,9 @@ executable wanaka-authentication
       Paths_wanaka_authentication
   hs-source-dirs:
       ./
+      src
       src/controllers
       src/models
-      src/views
       src/repositories
       src/services
   default-extensions:
@@ -68,7 +63,8 @@ executable wanaka-authentication
     , postgresql-simple
     , rel8
     , resource-pool
-    , scotty
+    , servant
+    , servant-server
     , text
     , time
     , transformers

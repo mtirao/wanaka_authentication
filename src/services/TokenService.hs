@@ -22,19 +22,18 @@ import Jose.Jwt (Jwt(Jwt), JwsHeader(JwsHeader))
 import Network.Wai.Middleware.HttpAuth
 
 import ErrorMessage
-import Views
 import qualified Token as Tkn
 import Realm
 import TokenModel
 import Control.Monad.Trans.Class (MonadTrans(lift))
 
 
-createToken conn clientid granttype= do
-        curTime <- liftIO getPOSIXTime
-        let expDate = tokenExpiration curTime
-        let token = buildToken granttype clientid expDate
-        liftIO $ Tkn.insertToken token granttype conn
-        jsonResponse (TokenResponse token "JWT" "" )
+-- createToken conn clientid granttype= do
+--        curTime <- liftIO getPOSIXTime
+--        let expDate = tokenExpiration curTime
+--        let token = buildToken granttype clientid expDate
+--        liftIO $ Tkn.insertToken token granttype conn
+--        jsonResponse (TokenResponse token "JWT" "" )
 
 
 -- Token helpers

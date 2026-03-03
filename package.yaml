@@ -8,9 +8,9 @@ license: BSD3
 homepage: https://github.com/mtirao/wanaka_authentication#readme
 source-dirs:
 - .
+- src
 - src/controllers
 - src/models
-- src/views
 - src/repositories
 - src/services
 default-extensions:
@@ -31,30 +31,31 @@ ghc-options:
 - -Wno-type-equality-out-of-scope
 - -Wno-type-equality-requires-operators
 dependencies:
-  - base >=4.14.3.0
-  - scotty
-  - bytestring
-  - text
-  - postgresql-simple
-  - aeson
-  - transformers
-  - wai
-  - wai-middleware-static
-  - wai-extra
-  - resource-pool
-  - configurator
-  - MissingH
-  - lens
-  - lens-aeson
-  - wreq
-  - http-types
-  - time
-  - warp
-  - bytestring-conversion
-  - jose-jwt
-  - hasql
-  - hasql-pool
-  - rel8
+- base >=4.14.3.0
+- servant
+- servant-server
+- bytestring
+- text
+- postgresql-simple
+- aeson
+- transformers
+- wai
+- wai-middleware-static
+- wai-extra
+- resource-pool
+- configurator
+- MissingH
+- lens
+- lens-aeson
+- wreq
+- http-types
+- time
+- warp
+- bytestring-conversion
+- jose-jwt
+- hasql
+- hasql-pool
+- rel8
 executables:
   wanaka-authentication:
     main: Main.hs
