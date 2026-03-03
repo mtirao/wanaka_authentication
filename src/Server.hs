@@ -5,7 +5,8 @@
 module Server (app) where
 
 import Servant
-import Network.Wai (Application)
+import Network.Wai (Application, Middleware, Request(..), responseLBS)
+import Network.HTTP.Types (status401)
 import Data.Text (Text)
 import qualified Data.Text.Encoding as TE
 import Control.Monad.IO.Class (liftIO)
@@ -82,7 +83,7 @@ api = Proxy
 
 -- Application entrypoint
 app :: Connection -> Application
-app conn = serve api (server conn)
+app conn = tokenMiddleware conn $ serve api (server conn)
 
 -- Server implementation
 server :: Connection -> Server API
@@ -100,6 +101,42 @@ server conn = loginHandler conn
          :<|> getMapHandler conn
          :<|> deleteMapHandler conn 
 
+
+-- Middleware and helpers
+
+-- | Simple token check using same logic as tokenValidateHandler (minus clientId)
+checkToken :: Connection -> Text -> IO Bool
+checkToken conn t = case decodeToken t of
+    Nothing -> return False
+    Just payload -> do
+        cur <- liftIO getPOSIXTime
+        if tokenExperitionTime payload >= toInt64 cur then do
+            res <- Tkn.findToken t conn
+            case res of
+                Left _ -> return False
+                Right [] -> return False
+                Right _  -> return True
+        else return False
+
+-- | Determine if the request path should skip authentication
+skipAuth :: [Text] -> Bool
+skipAuth path = path == ["api","wanaka","accounts","login"]
+               || path == ["api","wanaka","token","validate"]
+
+-- | Middleware that validates bearer token on all endpoints except login/validate
+tokenMiddleware :: Connection -> Middleware
+tokenMiddleware conn app req respond =
+    if skipAuth (pathInfo req) then
+        app req respond
+    else case lookup "authorization" (requestHeaders req) of
+        Nothing -> respond $ responseLBS status401 [("Content-Type","text/plain")] "Unauthorized"
+        Just auth -> case extractBearerAuth auth of
+            Nothing -> respond $ responseLBS status401 [("Content-Type","text/plain")] "Unauthorized"
+            Just tok -> do
+                let tokText = TE.decodeUtf8 tok
+                valid <- checkToken conn tokText
+                if valid then app req respond
+                         else respond $ responseLBS status401 [("Content-Type","text/plain")] "Unauthorized"
 
 -- Handlers
 loginHandler :: Connection -> Maybe Text -> Handler TokenResponse

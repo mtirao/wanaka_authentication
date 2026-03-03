@@ -1,5 +1,6 @@
 POST http://localhost:3001/api/wanaka/authorize HTTP/1.1
 content-type: application/json
+authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjbGllbnRfY3JlZGVudGlhbHMiLCJleHAiOjE3NzM0MjY0NTksInN1YiI6IjkyNTI1ODQwIn0.PLKrGjVOojYulfZwmZ8Ptzg5dnTbIKHV3XmDjWad0MQ
 
 {
     "userid" : "92525840",
