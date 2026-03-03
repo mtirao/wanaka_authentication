@@ -5,9 +5,16 @@
 module Server (app) where
 
 import Servant
-import Network.Wai (Application, Middleware, Request(..), responseLBS)
+import Network.Wai (Application, Middleware, Request(..), responseLBS, strictRequestBody, getRequestBodyChunk)
 import Network.HTTP.Types (status401)
 import Data.Text (Text)
+import Data.Text.Encoding (decodeUtf8)
+import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString as B
+import Data.Time.Clock (getCurrentTime)
+import Data.Time.Format (defaultTimeLocale, formatTime)
+import Control.Monad (when)
+import Data.IORef (newIORef, readIORef, modifyIORef, writeIORef)
 import qualified Data.Text.Encoding as TE
 import Control.Monad.IO.Class (liftIO)
 import Data.Time.Clock.POSIX (getPOSIXTime)
@@ -83,7 +90,7 @@ api = Proxy
 
 -- Application entrypoint
 app :: Connection -> Application
-app conn = tokenMiddleware conn $ serve api (server conn)
+app conn = loggingMiddleware $ tokenMiddleware conn $ serve api (server conn)
 
 -- Server implementation
 server :: Connection -> Server API
@@ -124,6 +131,42 @@ skipAuth path = path == ["api","wanaka","accounts","login"]
                || path == ["api","wanaka","token","validate"]
 
 -- | Middleware that validates bearer token on all endpoints except login/validate
+loggingMiddleware :: Middleware
+loggingMiddleware app req respond = do
+    -- capture time
+    now <- getCurrentTime
+    let timeStr = formatTime defaultTimeLocale "%Y-%m-%d %H:%M:%S" now
+    -- read and store body for replay
+    chunksRef <- newIORef []
+    let pullBody acc = do
+            chunk <- getRequestBodyChunk req
+            if B.null chunk then return (reverse acc)
+            else pullBody (chunk:acc)
+    chunks <- pullBody []
+    writeIORef chunksRef chunks
+    let bodyBS = B.concat chunks
+    -- log metadata
+    let method = BS.unpack (requestMethod req)
+        path   = show (pathInfo req)
+        hdrs   = show (requestHeaders req)
+        qs     = show (queryString req)
+        bodyStr = show bodyBS
+    putStrLn $ "[Request] " ++ timeStr ++ " " ++ method ++ " " ++ path
+    putStrLn $ "  headers: " ++ hdrs
+    putStrLn $ "  query: " ++ qs
+    putStrLn $ "  body: " ++ bodyStr
+    -- rebuild request body for downstream handlers
+    let req' = req { requestBody = do
+                        hs <- readIORef chunksRef
+                        case hs of
+                            [] -> return B.empty
+                            (h:rest) -> do
+                                writeIORef chunksRef rest
+                                return h
+                    }
+    app req' respond
+
+
 tokenMiddleware :: Connection -> Middleware
 tokenMiddleware conn app req respond =
     if skipAuth (pathInfo req) then
