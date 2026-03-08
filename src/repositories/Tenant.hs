@@ -23,10 +23,13 @@ import GHC.Generics (Generic)
 import Hasql.Connection (Connection, ConnectionError, acquire, release, settings)
 import Hasql.Session (QueryError, run, statement)
 import Hasql.Statement (Statement (..))
+import qualified Hasql.Pool as P
+import Hasql.Pool (Pool)
 import Rel8
 import Prelude hiding (filter, null)
 
 -- Rel8 Schemma Definitions
+
 data Tenant f = Tenant
     { userName :: Column f Text
     , userPassword :: Column f Text
@@ -51,18 +54,18 @@ tenantSchema = TableSchema
         }
     }
 
-findTenant :: Text -> Text -> Connection -> IO (Either QueryError [Tenant Result])
-findTenant userName password conn =  do 
+findTenant :: Text -> Text -> Pool -> IO (Either P.UsageError [Tenant Result])
+findTenant userName password pool =  do 
                             let query = select $ do
                                             p <- each tenantSchema
                                             where_ $ (p.userName ==. lit userName) &&. (p.userPassword ==. lit password)
                                             return p
-                            run (statement () query ) conn
+                            P.use pool (statement () query)
 
 -- INSERT
-insertTenant :: Text -> Text -> Text -> Text -> Int64-> Connection -> IO (Either QueryError [Text])
-insertTenant u p r i c conn = do
-                            run (statement () (insert1 u p r i c)) conn
+insertTenant :: Text -> Text -> Text -> Text -> Int64-> Pool -> IO (Either P.UsageError [Text])
+insertTenant u p r i c pool = do
+                            P.use pool (statement () (insert1 u p r i c))
 
 insert1 :: Text -> Text -> Text -> Text -> Int64 -> Statement () [Text]
 insert1 u p r i c = insert $ Insert 
@@ -73,9 +76,9 @@ insert1 u p r i c = insert $ Insert
             }
 
 -- DELETE
-deleteTenant :: Text -> Connection -> IO (Either QueryError [Text])
-deleteTenant u conn = do
-                        run (statement () (delete1 u )) conn
+deleteTenant :: Text -> Pool -> IO (Either P.UsageError [Text])
+deleteTenant u pool = do
+                        P.use pool (statement () (delete1 u ))
 
 delete1 :: Text -> Statement () [Text]
 delete1 u  = delete $ Delete
@@ -86,9 +89,9 @@ delete1 u  = delete $ Delete
             }
 
 -- UPDATE
-updatePassword :: Text -> Text -> Connection -> IO (Either QueryError [Text])
-updatePassword u p conn = do
-                        run (statement () (update1 u p)) conn
+updatePassword :: Text -> Text -> Pool -> IO (Either P.UsageError [Text])
+updatePassword u p pool = do
+                        P.use pool (statement () (update1 u p))
 
 -- Update password
 update1 :: Text -> Text -> Statement () [Text]

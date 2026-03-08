@@ -22,11 +22,12 @@ import GHC.Generics (Generic)
 import Hasql.Connection (Connection, ConnectionError, acquire, release, settings)
 import Hasql.Session (QueryError, run, statement)
 import Hasql.Statement (Statement (..))
+import qualified Hasql.Pool as P
+import Hasql.Pool (Pool)
 import Rel8
 import Prelude hiding (filter, null)
 import TokenModel
 import Control.Monad.Trans.RWS (get)
-
 data Realm f = Realm
     {clientid :: Column f Text
     , clientsecret :: Column f Text
@@ -49,18 +50,18 @@ realmSchema = TableSchema
 
 --Function
 -- SELECT
-findRealm :: Text -> Connection -> IO (Either QueryError [Realm Result])
-findRealm clientsecret conn = do
+findRealm :: Text -> Pool -> IO (Either P.UsageError [Realm Result])
+findRealm clientsecret pool = do
                             let query = select $ do
                                             p <- each realmSchema
                                             where_ $ p.clientsecret ==. lit clientsecret
                                             return p
-                            run (statement () query ) conn
+                            P.use pool (statement () query)
 
 -- INSERT
-insertRealm :: TokenRequest -> Connection -> IO (Either QueryError [Text])
-insertRealm p  conn = do
-                            run (statement () (insert1 p)) conn
+insertRealm :: TokenRequest -> Pool -> IO (Either P.UsageError [Text])
+insertRealm p pool = do
+                            P.use pool (statement () (insert1 p))
 
 insert1 :: TokenRequest -> Statement () [Text]
 insert1 p = insert $ Insert
@@ -71,9 +72,9 @@ insert1 p = insert $ Insert
             }
 
 -- DELETE
-deleteRealm :: Text -> Connection -> IO (Either QueryError [Text])
-deleteRealm u conn = do
-                        run (statement () (delete1 u )) conn
+deleteRealm :: Text -> Pool -> IO (Either P.UsageError [Text])
+deleteRealm u pool = do
+                        P.use pool (statement () (delete1 u ))
 
 delete1 :: Text -> Statement () [Text]
 delete1 u  = delete $ Delete

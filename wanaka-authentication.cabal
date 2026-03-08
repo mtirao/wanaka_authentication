@@ -18,6 +18,11 @@ executable wanaka-authentication
   main-is: Main.hs
   other-modules:
       Server
+      AuthorizeHandlers
+      GroupHandlers
+      MapHandlers
+      PermissionHandlers
+      TokenHandlers
       ErrorMessage
       GroupsDTO
       ResourceMapDTO
@@ -34,7 +39,7 @@ executable wanaka-authentication
   hs-source-dirs:
       ./
       src
-      src/controllers
+      src/handlers
       src/models
       src/repositories
       src/services

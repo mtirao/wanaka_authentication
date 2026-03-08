@@ -17,6 +17,8 @@ import GHC.Generics (Generic)
 import Hasql.Connection (Connection, ConnectionError, acquire, release, settings)
 import Hasql.Session (QueryError, run, statement)
 import Hasql.Statement (Statement (..))
+import qualified Hasql.Pool as P
+import Hasql.Pool (Pool)
 import Rel8
 import Prelude hiding (filter, null)
 import TokenModel
@@ -41,18 +43,18 @@ tokenSchema = TableSchema
 
 --Function
 -- SELECT
-findToken :: Text -> Connection -> IO (Either QueryError [Token Result])
-findToken token conn = do
+findToken :: Text -> Pool -> IO (Either P.UsageError [Token Result])
+findToken token pool = do
                             let query = select $ do
                                             p <- each tokenSchema
                                             where_ $ (p.authtoken ==. lit token)
                                             return p
-                            run (statement () query ) conn
+                            P.use pool (statement () query)
 
 -- INSERT
-insertToken :: Text -> Text -> Connection -> IO (Either QueryError [Text])
-insertToken a c  conn = do
-                            run (statement () (insert1 a c)) conn
+insertToken :: Text -> Text -> Pool -> IO (Either P.UsageError [Text])
+insertToken a c pool = do
+                            P.use pool (statement () (insert1 a c))
 
 insert1 ::  Text -> Text -> Statement () [Text]
 insert1 a c = insert $ Insert
@@ -63,9 +65,9 @@ insert1 a c = insert $ Insert
             }
 
 -- UPDATE
-updateToken :: Text -> Text -> Connection -> IO (Either QueryError [Text])
-updateToken t p conn = do
-                        run (statement () (update1 t p)) conn
+updateToken :: Text -> Text -> Pool -> IO (Either P.UsageError [Text])
+updateToken t p pool = do
+                        P.use pool (statement () (update1 t p))
 
 update1 :: Text -> Text -> Statement () [Text]
 update1 t u  = update $ Update
@@ -77,9 +79,9 @@ update1 t u  = update $ Update
             }
 
 -- DELETE
-deleteToken :: Text -> Connection -> IO (Either QueryError [Text])
-deleteToken u conn = do
-                        run (statement () (delete1 u )) conn
+deleteToken :: Text -> Pool -> IO (Either P.UsageError [Text])
+deleteToken u pool = do
+                        P.use pool (statement () (delete1 u ))
 
 delete1 :: Text -> Statement () [Text]
 delete1 u  = delete $ Delete

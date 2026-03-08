@@ -19,6 +19,8 @@ import GHC.Generics (Generic)
 import Hasql.Connection (Connection, ConnectionError, acquire, release, settings)
 import Hasql.Session (QueryError, run, statement)
 import Hasql.Statement (Statement (..))
+import qualified Hasql.Pool as P
+import Hasql.Pool (Pool)
 import Rel8
 import Prelude hiding (filter, null)
 
@@ -68,16 +70,16 @@ userPermissionSchema = TableSchema
 
 -- Functions
 -- GET
-findUserPermission :: Text -> Connection -> IO (Either QueryError [UserPermission Result])
-findUserPermission resource conn = do
+findUserPermission :: Text -> Pool -> IO (Either P.UsageError [UserPermission Result])
+findUserPermission resource pool = do
                             let query = select $ do
                                             p <- each userPermissionSchema
                                             where_  (p.permResource ==. lit resource)
                                             return p
-                            run (statement () query ) conn
+                            P.use pool (statement () query)
 
-findUserAuthorization :: Text -> Text -> Connection -> IO (Either QueryError [UserAuthorization Result])
-findUserAuthorization resource userId conn = do
+findUserAuthorization :: Text -> Text -> Pool -> IO (Either P.UsageError [UserAuthorization Result])
+findUserAuthorization resource userId pool = do
                             let query = select $ do
                                             p <- each userPermissionSchema
                                             u <- each R.resourceMapSchema
@@ -85,12 +87,12 @@ findUserAuthorization resource userId conn = do
                                             where_  (u.resMapUserId ==. lit userId)
                                             where_  (p.permResource ==. lit resource)
                                             return $ UserAuthorization p.permUserExec p.permUserRead p.permUserWrite
-                            run (statement () query ) conn
+                            P.use pool (statement () query)
 
 -- INSERT
-insertUserPermission :: UserPermissionsDTO -> Connection -> IO (Either QueryError [Text])
-insertUserPermission p  conn = do
-                            run (statement () (insert1 p)) conn
+insertUserPermission :: UserPermissionsDTO -> Pool -> IO (Either P.UsageError [Text])
+insertUserPermission p pool = do
+                            P.use pool (statement () (insert1 p))
 
 insert1 :: UserPermissionsDTO -> Statement () [Text]
 insert1 p = insert $ Insert
@@ -101,9 +103,9 @@ insert1 p = insert $ Insert
             }
 
 -- DELETE
-deleteUserPermission :: Text -> Connection -> IO (Either QueryError [Text])
-deleteUserPermission u conn = do
-                        run (statement () (delete1 u )) conn
+deleteUserPermission :: Text -> Pool -> IO (Either P.UsageError [Text])
+deleteUserPermission u pool = do
+                        P.use pool (statement () (delete1 u ))
 
 delete1 :: Text -> Statement () [Text]
 delete1 r  = delete $ Delete
@@ -114,9 +116,9 @@ delete1 r  = delete $ Delete
             }
 
 -- UPDATE
-updateUserPermission :: Text -> UserPermissionsDTO -> Connection -> IO (Either QueryError [Text])
-updateUserPermission r p conn = do
-                                run (statement () (update1 r p)) conn
+updateUserPermission :: Text -> UserPermissionsDTO -> Pool -> IO (Either P.UsageError [Text])
+updateUserPermission r p pool = do
+                                P.use pool (statement () (update1 r p))
 
 update1 :: Text -> UserPermissionsDTO -> Statement () [Text]
 update1 r p  = update $ Update

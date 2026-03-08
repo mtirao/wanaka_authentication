@@ -19,6 +19,8 @@ import GHC.Generics (Generic)
 import Hasql.Connection (Connection, ConnectionError, acquire, release, settings)
 import Hasql.Session (QueryError, run, statement)
 import Hasql.Statement (Statement (..))
+import qualified Hasql.Pool as P
+import Hasql.Pool (Pool)
 import Rel8
 import Prelude hiding (filter, null)
 
@@ -45,18 +47,18 @@ groupSchema = TableSchema
 
 -- Functions
 -- GET
-findGroup :: Text -> Connection -> IO (Either QueryError [Group Result])
-findGroup userId conn = do
+findGroup :: Text -> Pool -> IO (Either P.UsageError [Group Result])
+findGroup userId pool = do
                             let query = select $ do
                                             p <- each groupSchema
                                             where_  (p.userId ==. lit userId)
                                             return p
-                            run (statement () query ) conn
+                            P.use pool (statement () query)
 
 -- INSERT
-insertGroup :: GroupsDTO -> Connection -> IO (Either QueryError [Text])
-insertGroup p  conn = do
-                            run (statement () (insert1 p)) conn
+insertGroup :: GroupsDTO -> Pool -> IO (Either P.UsageError [Text])
+insertGroup p pool = do
+                            P.use pool (statement () (insert1 p))
 
 insert1 :: GroupsDTO -> Statement () [Text]
 insert1 p = insert $ Insert
@@ -67,9 +69,9 @@ insert1 p = insert $ Insert
             }
 
 -- DELETE
-deleteGroup :: Text -> Connection -> IO (Either QueryError [Text])
-deleteGroup u conn = do
-                        run (statement () (delete1 u )) conn
+deleteGroup :: Text -> Pool -> IO (Either P.UsageError [Text])
+deleteGroup u pool = do
+                        P.use pool (statement () (delete1 u ))
 
 delete1 :: Text -> Statement () [Text]
 delete1 u  = delete $ Delete
@@ -80,9 +82,9 @@ delete1 u  = delete $ Delete
             }
 
 -- UPDATE
-updateGroup :: Text -> GroupsDTO -> Connection -> IO (Either QueryError [Text])
-updateGroup u p conn = do
-                        run (statement () (update1 u p)) conn
+updateGroup :: Text -> GroupsDTO -> Pool -> IO (Either P.UsageError [Text])
+updateGroup u p pool = do
+                        P.use pool (statement () (update1 u p))
 
 update1 :: Text -> GroupsDTO -> Statement () [Text]
 update1 u p  = update $ Update

@@ -9,7 +9,7 @@ homepage: https://github.com/mtirao/wanaka_authentication#readme
 source-dirs:
 - .
 - src
-- src/controllers
+- src/handlers
 - src/models
 - src/repositories
 - src/services

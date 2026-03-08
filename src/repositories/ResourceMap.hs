@@ -19,6 +19,8 @@ import GHC.Generics (Generic)
 import Hasql.Connection (Connection, ConnectionError, acquire, release, settings)
 import Hasql.Session (QueryError, run, statement)
 import Hasql.Statement (Statement (..))
+import qualified Hasql.Pool as P
+import Hasql.Pool (Pool)
 import Rel8
 import Prelude hiding (filter, null)
 
@@ -48,18 +50,18 @@ resourceMapSchema = TableSchema
 
 -- Functions
 -- GET
-findResourceMap :: Text -> Connection -> IO (Either QueryError [ResourceMap Result])
-findResourceMap resource conn = do
+findResourceMap :: Text -> Pool -> IO (Either P.UsageError [ResourceMap Result])
+findResourceMap resource pool = do
                             let query = select $ do
                                             p <- each resourceMapSchema
                                             where_ $ p.resMapResource ==. lit resource
                                             return p
-                            run (statement () query ) conn
+                            P.use pool (statement () query)
 
 -- INSERT
-insertResourceMap :: ResourceMapDTO -> Connection -> IO (Either QueryError [Text])
-insertResourceMap p  conn = do
-                            run (statement () (insert1 p)) conn
+insertResourceMap :: ResourceMapDTO -> Pool -> IO (Either P.UsageError [Text])
+insertResourceMap p pool = do
+                            P.use pool (statement () (insert1 p))
 
 insert1 :: ResourceMapDTO -> Statement () [Text]
 insert1 p = insert $ Insert
@@ -70,9 +72,9 @@ insert1 p = insert $ Insert
             }
 
 -- DELETE
-deleteResourceMap :: Text -> Connection -> IO (Either QueryError [Text])
-deleteResourceMap u conn = do
-                        run (statement () (delete1 u )) conn
+deleteResourceMap :: Text -> Pool -> IO (Either P.UsageError [Text])
+deleteResourceMap u pool = do
+                        P.use pool (statement () (delete1 u ))
 
 delete1 :: Text -> Statement () [Text]
 delete1 u  = delete $ Delete
@@ -83,9 +85,9 @@ delete1 u  = delete $ Delete
             }
 
 -- UPDATE
-updateResourceMap :: Text -> ResourceMapDTO -> Connection -> IO (Either QueryError [Text])
-updateResourceMap u p conn = do
-                        run (statement () (update1 u p)) conn
+updateResourceMap :: Text -> ResourceMapDTO -> Pool -> IO (Either P.UsageError [Text])
+updateResourceMap u p pool = do
+                        P.use pool (statement () (update1 u p))
 
 update1 :: Text -> ResourceMapDTO -> Statement () [Text]
 update1 u p  = update $ Update

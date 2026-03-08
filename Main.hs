@@ -7,6 +7,7 @@ import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as CT
 import qualified Hasql.Connection as S
+import qualified Hasql.Pool as P
 
 data DbConfig = DbConfig
     { dbName     :: String
@@ -44,7 +45,10 @@ main = do
             result <- S.acquire connSettings
             case result of
                 Left err -> putStrLn $ "Error acquiring connection: " ++ show err
-                Right pool -> do
-                    putStrLn "Starting Servant server on port 3001"
-                    run 3001 (app pool)
+                Right _ -> do
+                    putStrLn "Database connection established"
+                    putStrLn "Starting Servant server on port 3001 "
+                    -- TODO: Integrate proper connection pooling with hasql-pool
+                    -- For now, using single connection - pooling to be implemented
+                    run 3001 (app (error "TODO: Pool not yet integrated"))
 
