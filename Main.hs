@@ -3,12 +3,12 @@
 import Network.Wai.Handler.Warp (run)
 import Server (app)
 import Data.Text (pack)
-import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as CT
-import Hasql.Connection
+import qualified Hasql.Connection.Setting as Setting
+import qualified Hasql.Connection.Setting.Connection as ConnSetting
 import Hasql.Pool as P
-import Data.Time (NominalDiffTime)
+import qualified Hasql.Pool.Config as PoolConfig
 
 data DbConfig = DbConfig
     { dbName     :: String
@@ -38,12 +38,17 @@ main = do
     case dbConf of
         Nothing -> putStrLn "Error loading configuration"
         Just conf -> do
-            let connSettings = settings (encodeUtf8 $ pack $ dbHost conf)
-                                        (fromIntegral $ dbPort conf)
-                                        (encodeUtf8 $ pack $ dbUser conf)
-                                        (encodeUtf8 $ pack $ dbPassword conf)
-                                        (encodeUtf8 $ pack $ dbName conf)
-            pool <- P.acquire 10 60 60 60 connSettings
+            let connString = pack $ "host=" ++ dbHost conf ++ " port=" ++ show (dbPort conf)
+                                ++ " user=" ++ dbUser conf ++ " password=" ++ dbPassword conf
+                                ++ " dbname=" ++ dbName conf
+                connSettings = Setting.connection (ConnSetting.string connString)
+            pool <- P.acquire $ PoolConfig.settings
+                [ PoolConfig.size 10
+                , PoolConfig.acquisitionTimeout 60
+                , PoolConfig.agingTimeout 60
+                , PoolConfig.idlenessTimeout 60
+                , PoolConfig.staticConnectionSettings [connSettings]
+                ]
             putStrLn "Starting Servant server on port 3001 "
             run 3001 (app pool)
 

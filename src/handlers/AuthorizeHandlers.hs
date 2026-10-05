@@ -11,7 +11,6 @@ import Control.Monad.IO.Class (liftIO)
 import Hasql.Connection (Connection)
 import qualified Hasql.Pool as P
 import Hasql.Pool (Pool)
-import Hasql.Session (QueryError)
 import UserPermissionsDTO (UserPermissionsDTO(..), UserAuthorizationRequestDTO(..), UserAuthorizationDTO(..)    )
 import qualified UserPermissions
 import qualified Tenant

@@ -19,7 +19,6 @@ import Data.Time.Clock.POSIX (getPOSIXTime)
 import Network.Wai.Middleware.HttpAuth (extractBasicAuth, extractBearerAuth)
 
 import Hasql.Connection (Connection)
-import Hasql.Session (QueryError, Session, run)
 import qualified Hasql.Pool as P
 import Hasql.Pool (Pool)
 

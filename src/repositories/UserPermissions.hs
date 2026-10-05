@@ -16,9 +16,7 @@ import qualified Data.Text.Lazy as TL
 --import qualified Data.Text.Internal as TI
 import Data.Time (LocalTime)
 import GHC.Generics (Generic)
-import Hasql.Connection (Connection, ConnectionError, acquire, release, settings)
-import Hasql.Session (QueryError, run, statement)
-import Hasql.Statement (Statement (..))
+import qualified Hasql.Session as Session
 import qualified Hasql.Pool as P
 import Hasql.Pool (Pool)
 import Rel8
@@ -53,7 +51,6 @@ data UserAuthorization f = UserAuthorization
 userPermissionSchema :: TableSchema (UserPermission Name)
 userPermissionSchema = TableSchema
     { name = "permissions"
-    , schema = Nothing
     , columns = UserPermission
         { permGroupExec = "group_exec"
         , permGroupRead = "group_read"
@@ -76,7 +73,7 @@ findUserPermission resource pool = do
                                             p <- each userPermissionSchema
                                             where_  (p.permResource ==. lit resource)
                                             return p
-                            P.use pool (statement () query)
+                            P.use pool (Session.statement () (run query))
 
 findUserAuthorization :: Text -> Text -> Pool -> IO (Either P.UsageError [UserAuthorization Result])
 findUserAuthorization resource userId pool = do
@@ -87,46 +84,46 @@ findUserAuthorization resource userId pool = do
                                             where_  (u.resMapUserId ==. lit userId)
                                             where_  (p.permResource ==. lit resource)
                                             return $ UserAuthorization p.permUserExec p.permUserRead p.permUserWrite
-                            P.use pool (statement () query)
+                            P.use pool (Session.statement () (run query))
 
 -- INSERT
 insertUserPermission :: UserPermissionsDTO -> Pool -> IO (Either P.UsageError [Text])
 insertUserPermission p pool = do
-                            P.use pool (statement () (insert1 p))
+                            P.use pool (Session.statement () (run (insert1 p)))
 
-insert1 :: UserPermissionsDTO -> Statement () [Text]
+insert1 :: UserPermissionsDTO -> Statement (Query (Expr Text))
 insert1 p = insert $ Insert
             { into = userPermissionSchema
             , rows = values [ UserPermission (lit p.permGroupExec) (lit p.permGroupRead) (lit p.permGroupWrite) (lit p.permOtherExec) (lit p.permOtherRead) (lit p.permOtherWrite) (lit p.permResource) (lit p.permUserExec) (lit p.permUserRead) (lit p.permUserWrite)]
-            , returning = Projection (.permResource)
+            , returning = Returning (.permResource)
             , onConflict = Abort
             }
 
 -- DELETE
 deleteUserPermission :: Text -> Pool -> IO (Either P.UsageError [Text])
 deleteUserPermission u pool = do
-                        P.use pool (statement () (delete1 u ))
+                        P.use pool (Session.statement () (run (delete1 u)))
 
-delete1 :: Text -> Statement () [Text]
+delete1 :: Text -> Statement (Query (Expr Text))
 delete1 r  = delete $ Delete
             { from = userPermissionSchema
             , using = pure ()
             , deleteWhere = \t ui -> ui.permResource ==. lit r
-            , returning = Projection (.permResource)
+            , returning = Returning (.permResource)
             }
 
 -- UPDATE
 updateUserPermission :: Text -> UserPermissionsDTO -> Pool -> IO (Either P.UsageError [Text])
 updateUserPermission r p pool = do
-                                P.use pool (statement () (update1 r p))
+                                P.use pool (Session.statement () (run (update1 r p)))
 
-update1 :: Text -> UserPermissionsDTO -> Statement () [Text]
+update1 :: Text -> UserPermissionsDTO -> Statement (Query (Expr Text))
 update1 r p  = update $ Update
             { target = userPermissionSchema
             , from = pure ()
             , set = \_ row -> UserPermission (lit p.permGroupExec) (lit p.permGroupRead) (lit p.permGroupWrite) (lit p.permOtherExec) (lit p.permOtherRead) (lit p.permOtherWrite) (lit p.permResource) (lit p.permUserExec) (lit p.permUserRead) (lit p.permUserWrite)
             , updateWhere = \t ui -> ui.permResource ==. lit r
-            , returning = Projection (.permResource)
+            , returning = Returning (.permResource)
             }
 
 -- Helpers

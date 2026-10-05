@@ -12,7 +12,6 @@ import qualified Hasql.Pool as P
 import Hasql.Pool (Pool)
 import qualified ResourceMap
 import ResourceMapDTO (ResourceMapDTO(..))
-import Hasql.Session (QueryError)
 import Rel8 (Result)
 
 createMapHandler :: Pool -> ResourceMapDTO -> Handler NoContent

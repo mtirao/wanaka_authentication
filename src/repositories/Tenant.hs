@@ -20,9 +20,7 @@ import Data.Int (Int32, Int64)
 import Data.Text (Text, unpack)
 import Data.Time (LocalTime)
 import GHC.Generics (Generic)
-import Hasql.Connection (Connection, ConnectionError, acquire, release, settings)
-import Hasql.Session (QueryError, run, statement)
-import Hasql.Statement (Statement (..))
+import qualified Hasql.Session as Session
 import qualified Hasql.Pool as P
 import Hasql.Pool (Pool)
 import Rel8
@@ -44,7 +42,6 @@ deriving stock instance f ~ Rel8.Result => Show (Tenant f)
 tenantSchema :: TableSchema (Tenant Name)
 tenantSchema = TableSchema
     { name = "tenants"
-    , schema = Nothing
     , columns = Tenant
         { userName = "user_name"
         , userPassword = "user_password"
@@ -60,47 +57,47 @@ findTenant userName password pool =  do
                                             p <- each tenantSchema
                                             where_ $ (p.userName ==. lit userName) &&. (p.userPassword ==. lit password)
                                             return p
-                            P.use pool (statement () query)
+                            P.use pool (Session.statement () (run query))
 
 -- INSERT
 insertTenant :: Text -> Text -> Text -> Text -> Int64-> Pool -> IO (Either P.UsageError [Text])
 insertTenant u p r i c pool = do
-                            P.use pool (statement () (insert1 u p r i c))
+                            P.use pool (Session.statement () (run (insert1 u p r i c)))
 
-insert1 :: Text -> Text -> Text -> Text -> Int64 -> Statement () [Text]
+insert1 :: Text -> Text -> Text -> Text -> Int64 -> Statement (Query (Expr Text))
 insert1 u p r i c = insert $ Insert 
             { into = tenantSchema
             , rows = values [ Tenant (lit u) (lit p) (lit i) (lit c) "new" ]
-            , returning = Projection (.userId)
+            , returning = Returning (.userId)
             , onConflict = Abort
             }
 
 -- DELETE
 deleteTenant :: Text -> Pool -> IO (Either P.UsageError [Text])
 deleteTenant u pool = do
-                        P.use pool (statement () (delete1 u ))
+                        P.use pool (Session.statement () (run (delete1 u)))
 
-delete1 :: Text -> Statement () [Text]
+delete1 :: Text -> Statement (Query (Expr Text))
 delete1 u  = delete $ Delete
             { from = tenantSchema
             , using = pure ()
             , deleteWhere = \t ui -> ui.userId ==. lit u
-            , returning = Projection (.userId)
+            , returning = Returning (.userId)
             }
 
 -- UPDATE
 updatePassword :: Text -> Text -> Pool -> IO (Either P.UsageError [Text])
 updatePassword u p pool = do
-                        P.use pool (statement () (update1 u p))
+                        P.use pool (Session.statement () (run (update1 u p)))
 
 -- Update password
-update1 :: Text -> Text -> Statement () [Text]
+update1 :: Text -> Text -> Statement (Query (Expr Text))
 update1 u p  = update $ Update
             { target = tenantSchema
             , from = pure ()
             , set = \_ row -> Tenant row.userName (lit p) row.userId row.createdAt row.status
             , updateWhere = \t ui -> ui.userId ==. lit u
-            , returning = Projection (.userId)
+            , returning = Returning (.userId)
             }
 
 -- Helper

@@ -16,9 +16,7 @@ import qualified Data.Text.Lazy as TL
 --import qualified Data.Text.Internal as TI
 import Data.Time (LocalTime)
 import GHC.Generics (Generic)
-import Hasql.Connection (Connection, ConnectionError, acquire, release, settings)
-import Hasql.Session (QueryError, run, statement)
-import Hasql.Statement (Statement (..))
+import qualified Hasql.Session as Session
 import qualified Hasql.Pool as P
 import Hasql.Pool (Pool)
 import Rel8
@@ -40,7 +38,6 @@ deriving stock instance f ~ Rel8.Result => Show (ResourceMap f)
 resourceMapSchema :: TableSchema (ResourceMap Name)
 resourceMapSchema = TableSchema
     { name = "resource_mappings"
-    , schema = Nothing
     , columns = ResourceMap
         { resMapUserId = "user_id"
         , resMapGroupId = "group_id"
@@ -56,46 +53,46 @@ findResourceMap resource pool = do
                                             p <- each resourceMapSchema
                                             where_ $ p.resMapResource ==. lit resource
                                             return p
-                            P.use pool (statement () query)
+                            P.use pool (Session.statement () (run query))
 
 -- INSERT
 insertResourceMap :: ResourceMapDTO -> Pool -> IO (Either P.UsageError [Text])
 insertResourceMap p pool = do
-                            P.use pool (statement () (insert1 p))
+                            P.use pool (Session.statement () (run (insert1 p)))
 
-insert1 :: ResourceMapDTO -> Statement () [Text]
+insert1 :: ResourceMapDTO -> Statement (Query (Expr Text))
 insert1 p = insert $ Insert
             { into = resourceMapSchema
             , rows = values [ ResourceMap (lit p.resMapUserId) (lit p.resMapGroupId) (lit p.resMapResource)]
-            , returning = Projection (.resMapResource)
+            , returning = Returning (.resMapResource)
             , onConflict = Abort
             }
 
 -- DELETE
 deleteResourceMap :: Text -> Pool -> IO (Either P.UsageError [Text])
 deleteResourceMap u pool = do
-                        P.use pool (statement () (delete1 u ))
+                        P.use pool (Session.statement () (run (delete1 u)))
 
-delete1 :: Text -> Statement () [Text]
+delete1 :: Text -> Statement (Query (Expr Text))
 delete1 u  = delete $ Delete
             { from = resourceMapSchema
             , using = pure ()
             , deleteWhere = \t ui -> ui.resMapResource ==. lit u
-            , returning = Projection (.resMapResource)
+            , returning = Returning (.resMapResource)
             }
 
 -- UPDATE
 updateResourceMap :: Text -> ResourceMapDTO -> Pool -> IO (Either P.UsageError [Text])
 updateResourceMap u p pool = do
-                        P.use pool (statement () (update1 u p))
+                        P.use pool (Session.statement () (run (update1 u p)))
 
-update1 :: Text -> ResourceMapDTO -> Statement () [Text]
+update1 :: Text -> ResourceMapDTO -> Statement (Query (Expr Text))
 update1 u p  = update $ Update
             { target = resourceMapSchema
             , from = pure ()
             , set = \_ row -> ResourceMap (lit p.resMapUserId) (lit p.resMapGroupId) (lit p.resMapResource)
             , updateWhere = \t ui -> ui.resMapUserId ==. lit u
-            , returning = Projection (.resMapUserId)
+            , returning = Returning (.resMapUserId)
             }
 
 -- Helpers

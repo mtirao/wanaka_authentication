@@ -16,9 +16,7 @@ import qualified Data.Text.Lazy as TL
 --import qualified Data.Text.Internal as TI
 import Data.Time (LocalTime)
 import GHC.Generics (Generic)
-import Hasql.Connection (Connection, ConnectionError, acquire, release, settings)
-import Hasql.Session (QueryError, run, statement)
-import Hasql.Statement (Statement (..))
+import qualified Hasql.Session as Session
 import qualified Hasql.Pool as P
 import Hasql.Pool (Pool)
 import Rel8
@@ -38,7 +36,6 @@ deriving stock instance f ~ Rel8.Result => Show (Group f)
 groupSchema :: TableSchema (Group Name)
 groupSchema = TableSchema
     { name = "groups"
-    , schema = Nothing
     , columns = Group
         { userId = "user_id"
         , groupId = "group_id"
@@ -53,46 +50,46 @@ findGroup userId pool = do
                                             p <- each groupSchema
                                             where_  (p.userId ==. lit userId)
                                             return p
-                            P.use pool (statement () query)
+                            P.use pool (Session.statement () (run query))
 
 -- INSERT
 insertGroup :: GroupsDTO -> Pool -> IO (Either P.UsageError [Text])
 insertGroup p pool = do
-                            P.use pool (statement () (insert1 p))
+                            P.use pool (Session.statement () (run (insert1 p)))
 
-insert1 :: GroupsDTO -> Statement () [Text]
+insert1 :: GroupsDTO -> Statement (Query (Expr Text))
 insert1 p = insert $ Insert
             { into = groupSchema
             , rows = values [ Group (lit p.groupUserId) (lit p.groupId)]
-            , returning = Projection (.userId)
+            , returning = Returning (.userId)
             , onConflict = Abort
             }
 
 -- DELETE
 deleteGroup :: Text -> Pool -> IO (Either P.UsageError [Text])
 deleteGroup u pool = do
-                        P.use pool (statement () (delete1 u ))
+                        P.use pool (Session.statement () (run (delete1 u)))
 
-delete1 :: Text -> Statement () [Text]
+delete1 :: Text -> Statement (Query (Expr Text))
 delete1 u  = delete $ Delete
             { from = groupSchema
             , using = pure ()
             , deleteWhere = \t ui -> ui.userId ==. lit u
-            , returning = Projection (.userId)
+            , returning = Returning (.userId)
             }
 
 -- UPDATE
 updateGroup :: Text -> GroupsDTO -> Pool -> IO (Either P.UsageError [Text])
 updateGroup u p pool = do
-                        P.use pool (statement () (update1 u p))
+                        P.use pool (Session.statement () (run (update1 u p)))
 
-update1 :: Text -> GroupsDTO -> Statement () [Text]
+update1 :: Text -> GroupsDTO -> Statement (Query (Expr Text))
 update1 u p  = update $ Update
             { target = groupSchema
             , from = pure ()
             , set = \_ row -> Group (lit p.groupUserId) (lit p.groupId)
             , updateWhere = \t ui -> ui.userId ==. lit u
-            , returning = Projection (.userId)
+            , returning = Returning (.userId)
             }
 
 -- Helpers
